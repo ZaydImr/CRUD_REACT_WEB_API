@@ -16,43 +16,54 @@ namespace webApi.Controllers
     {
 
         private readonly IConfiguration configuration;
+        private SqlConnection cn;
         public WeatherForecastController(IConfiguration configuration)
         {
             this.configuration = configuration;
+            cn = new SqlConnection(configuration.GetConnectionString("con"));
         }
+        private void openCon()
+        {
+            if (cn.State != ConnectionState.Open)
+                cn.Open();
+        }
+        private void closeCon()
+        {
+            if (cn.State != ConnectionState.Closed)
+                cn.Close();
+        }
+
 
         [HttpGet]
         public JsonResult Get()
         {
-            SqlConnection cn = new SqlConnection(configuration.GetConnectionString("con"));
-            cn.Open();
+            openCon();
             SqlCommand com = new SqlCommand("select * from users",cn);
             SqlDataReader dr = com.ExecuteReader();
             DataTable table = new DataTable("tb");
             table.Load(dr);
-            cn.Close();
+            closeCon();
             return new JsonResult(table);
         }
 
         [HttpPost]
         public JsonResult Post(User user)
         {
-            SqlConnection cn = new SqlConnection(@"Data source = .\sqlexpress;initial catalog = react_crud;integrated security = true;");
-            cn.Open();
+            openCon();
             SqlCommand com = new SqlCommand("insert into users values ('"+user.username+"','"+user.password+"','"+user.Fullname+"','"+ user.email + "','"+user.phoneNumber+"')", cn);
             try
             {
                 com.ExecuteNonQuery();
+                closeCon();
                 return new JsonResult("Added Successefuly");
             }
-            catch (Exception) { return new JsonResult("Failed !!"); }
+            catch (Exception) { closeCon(); return new JsonResult("Failed !!"); }
         }
 
         [HttpPut]
         public JsonResult Put(User user)
         {
-            SqlConnection cn = new SqlConnection(@"Data source = .\sqlexpress;initial catalog = react_crud;integrated security = true;");
-            cn.Open();
+            openCon();
             SqlCommand com = new SqlCommand("update users set password ='" + user.password + 
                                             "' , Fullname = '" + user.Fullname + 
                                             "' , phoneNumber ='" + user.phoneNumber + 
@@ -60,25 +71,24 @@ namespace webApi.Controllers
             try
             {
                 com.ExecuteNonQuery();
+                closeCon();
                 return new JsonResult("Updated Successefuly");
             }
-            catch (Exception) { return new JsonResult("Failed !!"); }
-            cn.Close();
+            catch (Exception) { closeCon(); return new JsonResult("Failed !!"); }
         }
 
         [HttpDelete("{user}")]
         public JsonResult Delete(string user)
         {
-            SqlConnection cn = new SqlConnection(@"Data source = .\sqlexpress;initial catalog = react_crud;integrated security = true;");
-            cn.Open();
+            openCon();
             SqlCommand com = new SqlCommand("delete users where username like '"+user+"';", cn);
             try
             {
                 com.ExecuteNonQuery();
+                closeCon();
                 return new JsonResult("Delete Successefuly");
             }
-            catch (Exception) { return new JsonResult("Failed !!"); }
-            cn.Close();
+            catch (Exception) { closeCon(); return new JsonResult("Failed !!"); }
         }
 
     }
